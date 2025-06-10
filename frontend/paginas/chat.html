@@ -1,85 +1,121 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Chat</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
-      background-size: 200% 200%;
-      animation: gradientShift 15s ease infinite;
-    }
-
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-  </style>
+  <link href="https://cdn.tailwindcss.com" rel="stylesheet">
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4 text-white">
+<body class="bg-gradient-to-r from-indigo-900 to-purple-900 text-white min-h-screen p-4 font-sans">
 
-  <div class="w-full max-w-2xl bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6 shadow-lg">
-    <h1 class="text-2xl font-bold mb-4 text-center">Chat</h1>
+  <div class="max-w-5xl mx-auto flex gap-6">
+    <!-- Lista de usuários -->
+    <aside class="w-1/4 bg-white bg-opacity-10 rounded-lg p-4">
+      <h2 class="text-xl font-bold mb-4">Conversar com:</h2>
+      <ul id="usuariosList" class="space-y-2"></ul>
+    </aside>
 
-    <div id="chatBox" class="h-96 overflow-y-scroll border border-white rounded p-4 mb-4 bg-white bg-opacity-20 text-sm"></div>
+    <!-- Chat -->
+    <main class="flex-1 bg-white bg-opacity-10 rounded-lg p-4 flex flex-col">
+      <h2 class="text-xl font-bold mb-2">Chat</h2>
+      <div id="chatBox" class="flex-1 overflow-y-auto bg-black bg-opacity-20 rounded-lg p-4 mb-4 h-96">
+        <p class="text-gray-300 text-sm italic">Selecione um usuário para iniciar uma conversa</p>
+      </div>
 
-    <div class="flex items-center space-x-2">
-      <input id="mensagem" type="text" placeholder="Digite sua mensagem..." class="flex-1 px-4 py-2 rounded bg-white text-black" />
-      <button onclick="enviarMensagem()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Enviar</button>
-    </div>
+      <form id="chatForm" class="flex gap-2">
+        <input id="mensagemInput" type="text" placeholder="Digite sua mensagem" required
+               class="flex-1 p-2 rounded text-black" />
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+          Enviar
+        </button>
+      </form>
+    </main>
   </div>
 
   <script>
-    const chatBox = document.getElementById('chatBox');
-    const inputMensagem = document.getElementById('mensagem');
+    const usuarioId = localStorage.getItem('id');
+    const tipo = localStorage.getItem('tipo');
+    const nome = localStorage.getItem('nome');
+    let destinatarioId = null;
 
-    const remetenteId = localStorage.getItem('id');
-    const destinatarioId = localStorage.getItem('destinatarioId') || '666afbe11c4d1298a7c9e7b1'; // Substitua por ID real dinamicamente
+    const usuariosList = document.getElementById('usuariosList');
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const mensagemInput = document.getElementById('mensagemInput');
+
+    async function carregarUsuarios() {
+      try {
+        const tipoOposto = tipo === 'terapeuta' ? 'paciente' : 'terapeuta';
+        const res = await fetch(`http://localhost:3000/usuarios?tipo=${tipoOposto}`);
+        const usuarios = await res.json();
+
+        usuariosList.innerHTML = '';
+        usuarios.forEach(u => {
+          const li = document.createElement('li');
+          li.textContent = u.nome;
+          li.className = 'cursor-pointer hover:underline';
+          li.onclick = () => selecionarUsuario(u._id, u.nome);
+          usuariosList.appendChild(li);
+        });
+      } catch (err) {
+        console.error('Erro ao carregar usuários:', err);
+        usuariosList.innerHTML = '<p class="text-red-300">Erro ao buscar usuários</p>';
+      }
+    }
+
+    async function selecionarUsuario(id, nome) {
+      destinatarioId = id;
+      chatBox.innerHTML = `<p class="text-gray-300 text-sm italic">Conversando com <strong>${nome}</strong></p>`;
+      await carregarMensagens();
+    }
 
     async function carregarMensagens() {
-      try {
-        const res = await axios.get(`http://localhost:3000/chat/conversa/${remetenteId}/${destinatarioId}`);
-        chatBox.innerHTML = '';
+      if (!destinatarioId) return;
 
-        res.data.forEach(msg => {
-          const msgDiv = document.createElement('div');
-          msgDiv.className = msg.remetenteId === remetenteId ? 'text-right mb-2' : 'text-left mb-2';
-          msgDiv.innerHTML = `<span class="inline-block px-3 py-2 rounded bg-white text-black">${msg.texto}</span>`;
-          chatBox.appendChild(msgDiv);
+      try {
+        const res = await fetch(`http://localhost:3000/chat/conversa/${usuarioId}/${destinatarioId}`);
+        const mensagens = await res.json();
+
+        chatBox.innerHTML = '';
+        mensagens.forEach(msg => {
+          const div = document.createElement('div');
+          div.className = 'mb-2';
+          const alinhamento = msg.remetenteId === usuarioId ? 'text-right' : 'text-left';
+          div.innerHTML = `
+            <p class="${alinhamento}">
+              <span class="bg-white bg-opacity-20 px-3 py-1 rounded inline-block">
+                ${msg.texto}
+              </span>
+            </p>
+          `;
+          chatBox.appendChild(div);
         });
 
         chatBox.scrollTop = chatBox.scrollHeight;
-      } catch (e) {
-        console.error('Erro ao carregar mensagens:', e);
-        chatBox.innerHTML = '<p class="text-red-300">Erro ao carregar mensagens.</p>';
+      } catch (err) {
+        console.error('Erro ao buscar mensagens:', err);
       }
     }
 
-    async function enviarMensagem() {
-      const texto = inputMensagem.value.trim();
-      if (!texto) return;
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const texto = mensagemInput.value.trim();
+      if (!texto || !destinatarioId) return;
 
       try {
-        await axios.post('http://localhost:3000/chat/enviar', {
-          remetenteId,
-          destinatarioId,
-          texto
+        await fetch('http://localhost:3000/chat/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ remetenteId: usuarioId, destinatarioId, texto })
         });
-        inputMensagem.value = '';
-        carregarMensagens();
-      } catch (e) {
-        console.error('Erro ao enviar:', e);
-      }
-    }
 
-    carregarMensagens();
-    setInterval(carregarMensagens, 5000); // Atualiza automaticamente a cada 5 segundos
+        mensagemInput.value = '';
+        await carregarMensagens();
+      } catch (err) {
+        console.error('Erro ao enviar mensagem:', err);
+      }
+    });
+
+    carregarUsuarios();
   </script>
 </body>
 </html>
