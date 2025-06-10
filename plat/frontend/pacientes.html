@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciamento de Pacientes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .fade-in {
+      animation: fadeIn 0.8s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .btn-hover {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    #particles-js {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+    .theme-light {
+      background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
+    }
+    .theme-light .bg-white {
+      background-color: #ffffff;
+    }
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid #ffffff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: none;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <div id="particles-js"></div>
+  <header class="bg-white bg-opacity-10 backdrop-blur-md py-4 px-6 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+      </svg>
+      <h1 class="text-2xl font-bold text-white">Suporte Emocional</h1>
+    </div>
+    <button id="theme-toggle" class="text-white hover:text-gray-200">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+      </svg>
+    </button>
+  </header>
+
+  <main class="flex-grow flex items-center justify-center px-4 py-8">
+    <div id="app" class="w-full max-w-2xl"></div>
+  </main>
+
+  <footer class="bg-white bg-opacity-10 backdrop-blur-md py-4 text-center text-white text-sm">
+    <p>© 2025 Plataforma de Suporte Emocional. Todos os direitos reservados.</p>
+    <div class="mt-2 space-x-4">
+      <a href="#" class="hover:underline">Sobre</a>
+      <a href="#" class="hover:underline">Contato</a>
+      <a href="#" class="hover:underline">Termos</a>
+    </div>
+  </footer>
+
+  <script type="text/babel">
+    const App = () => {
+      const [isLoading, setIsLoading] = React.useState(false);
+
+      const handleAddPatient = () => {
+        setIsLoading(true);
+        setTimeout(() => {
+          setIsLoading(false);
+          alert('Paciente adicionado com sucesso!');
+        }, 1000);
+      };
+
+      return (
+        <div className="bg-white bg-opacity-90 rounded-xl shadow-2xl p-8 fade-in w-full">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Gerenciamento de Pacientes</h2>
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="patientName" className="block text-sm font-medium text-gray-700">Nome do Paciente</label>
+              <input
+                type="text"
+                id="patientName"
+                className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Digite o nome do paciente"
+              />
+            </div>
+            <div>
+              <label htmlFor="patientEmail" className="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                id="patientEmail"
+                className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="seu.email@exemplo.com"
+              />
+            </div>
+            <button
+              onClick={handleAddPatient}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg btn-hover flex items-center justify-center"
+            >
+              {isLoading ? <span className="spinner" /> : 'Adicionar Paciente'}
+            </button>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Lista de Pacientes</h3>
+              <ul className="list-disc pl-5 space-y-2">
+                <li className="text-gray-600">João Silva - joao.silva@exemplo.com</li>
+                <li className="text-gray-600">Maria Oliveira - maria.oliveira@exemplo.com</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(<App />, document.getElementById('app'));
+
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: '#ffffff' },
+        shape: { type: 'circle' },
+        opacity: { value: 0.5, random: true },
+        size: { value: 3, random: true },
+        line_linked: { enable: false },
+        move: { enable: true, speed: 2, direction: 'none', random: true }
+      },
+      interactivity: {
+        detect_on: 'canvas',
+        events: { onhover: { enable: true, mode: 'repulse' } },
+        modes: { repulse: { distance: 100, duration: 0.4 } }
+      }
+    });
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      document.body.classList.toggle('theme-light');
+    });
+  </script>
+</html>

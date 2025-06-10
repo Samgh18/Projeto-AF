@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    #sidebar {
+      position: fixed;
+      top: 0; left: -250px;
+      width: 250px;
+      height: 100vh;
+      background-color: #343a40;
+      color: white;
+      padding-top: 60px;
+      transition: all 0.3s ease;
+      z-index: 9999;
+    }
+    #sidebar.active {
+      left: 0;
+    }
+    #sidebar ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    #sidebar ul li {
+      padding: 15px 20px;
+      cursor: pointer;
+    }
+    #sidebar ul li:hover {
+      background-color: #495057;
+    }
+    #sidebar ul li.logout {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+    }
+    #content {
+      padding: 20px;
+      transition: margin-left 0.3s;
+    }
+    #btnMenu {
+      position: fixed;
+      top: 10px;
+      left: 15px;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 10000;
+      color: #343a40;
+    }
+  </style>
+</head>
+<body>
+  <div id="btnMenu">&#9776;</div>
+
+  <nav id="sidebar">
+    <ul id="menu"></ul>
+    <li class="logout" id="btnLogout">Logout</li>
+  </nav>
+
+  <div id="content">
+    <h2 id="titulo"></h2>
+    <p>Seja bem-vindo(a) à plataforma. Escolha uma opção no menu.</p>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const menu = document.getElementById('menu');
+    const content = document.getElementById('content');
+    const btnMenu = document.getElementById('btnMenu');
+    const btnLogout = document.getElementById('btnLogout');
+
+    const tipo = localStorage.getItem('tipo');
+    const nome = localStorage.getItem('nome');
+
+    btnMenu.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
+
+    btnLogout.addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    });
+
+    const paginasPaciente = [
+      { id: 'chat', nome: 'Chat' },
+      { id: 'minhas-sessoes', nome: 'Minhas Sessões' },
+      { id: 'agendar-sessao', nome: 'Agendar Sessão' },
+      { id: 'terapeutas', nome: 'Terapeutas' },
+      { id: 'conteudo', nome: 'Conteúdo' },
+      { id: 'suporte', nome: 'Suporte ao Usuário' }
+    ];
+
+    const paginasTerapeuta = [
+      { id: 'chat', nome: 'Chat' },
+      { id: 'agenda', nome: 'Minha Agenda' },
+      { id: 'pacientes', nome: 'Meus Pacientes' },
+      { id: 'conteudo', nome: 'Conteúdo (com upload)' }
+    ];
+
+    const paginas = tipo === 'terapeuta' ? paginasTerapeuta : paginasPaciente;
+
+    paginas.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p.nome;
+      li.onclick = () => carregarPagina(p);
+      menu.appendChild(li);
+    });
+
+    function carregarPagina(pagina) {
+      document.getElementById('titulo').innerText = pagina.nome;
+      fetch(`paginas/${pagina.id}.html`)
+        .then(res => res.text())
+        .then(html => content.innerHTML = html)
+        .catch(() => content.innerHTML = '<p>Erro ao carregar a página.</p>');
+      sidebar.classList.remove('active');
+    }
+
+    document.getElementById('titulo').innerText = `Olá, ${nome}`;
+  </script>
+</body>
+</html>

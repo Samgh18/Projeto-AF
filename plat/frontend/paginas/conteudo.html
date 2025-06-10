@@ -1,0 +1,53 @@
+<h2>Conteúdo (com Upload)</h2>
+<p>Envie materiais para compartilhar com os pacientes.</p>
+<form id="formUpload">
+  <div class="mb-3">
+    <label class="form-label">Título do Conteúdo</label>
+    <input type="text" class="form-control" id="titulo" required />
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Arquivo (PDF, artigo...)</label>
+    <input type="file" class="form-control" id="arquivo" required />
+  </div>
+  <button class="btn btn-primary" type="submit">Enviar</button>
+  <p id="mensagemUpload" class="mt-2"></p>
+</form>
+
+<script>
+  document.getElementById('formUpload')?.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('titulo', document.getElementById('titulo').value);
+    formData.append('arquivo', document.getElementById('arquivo').files[0]);
+    formData.append('terapeutaId', localStorage.getItem('id'));
+
+    try {
+      const res = await fetch('http://localhost:3000/conteudo/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const text = await res.text();
+      document.getElementById('mensagemUpload').textContent = text;
+    } catch (e) {
+      document.getElementById('mensagemUpload').textContent = 'Erro ao enviar';
+    }
+  });
+
+  // Listar conteúdos para pacientes
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!document.getElementById('lista-conteudo')) return;
+    const lista = document.getElementById('lista-conteudo');
+    try {
+      const res = await fetch('http://localhost:3000/conteudo/listar');
+      const conteudos = await res.json();
+      conteudos.forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item';
+        li.innerHTML = `<strong>${c.titulo}</strong> - <a href="http://localhost:3000/uploads/${c.arquivo}" target="_blank">Abrir</a>`;
+        lista.appendChild(li);
+      });
+    } catch (e) {
+      lista.innerHTML = '<li class="list-group-item">Erro ao carregar conteúdo</li>';
+    }
+  });
+</script>
