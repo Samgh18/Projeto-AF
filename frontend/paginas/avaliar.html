@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avaliar Terapeuta</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .estrela {
+      cursor: pointer;
+      font-size: 2rem;
+      color: #ddd;
+      transition: color 0.2s;
+    }
+    .estrela.selecionada {
+      color: gold;
+    }
+  </style>
+</head>
+<body class="text-white p-6">
+  <h2 class="text-3xl font-bold mb-6 text-center">Avaliar Terapeuta</h2>
+
+  <form id="formAvaliacao" class="max-w-xl mx-auto bg-white bg-opacity-20 backdrop-blur-md p-6 rounded-lg space-y-4">
+    <div class="text-center">
+      <p class="mb-2 font-semibold">Sua nota:</p>
+      <div id="estrelas" class="flex justify-center gap-2">
+        <span class="estrela" data-valor="1">★</span>
+        <span class="estrela" data-valor="2">★</span>
+        <span class="estrela" data-valor="3">★</span>
+        <span class="estrela" data-valor="4">★</span>
+        <span class="estrela" data-valor="5">★</span>
+      </div>
+    </div>
+
+    <div>
+      <label for="comentario" class="block mb-1 font-semibold">Comentário</label>
+      <textarea id="comentario" rows="4" class="w-full p-2 rounded text-black" placeholder="Escreva seu feedback..."></textarea>
+    </div>
+
+    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded text-black font-bold w-full">Enviar Avaliação</button>
+
+    <p id="mensagem" class="text-center mt-2 font-semibold"></p>
+  </form>
+
+  <script>
+    const estrelas = document.querySelectorAll('.estrela');
+    const mensagem = document.getElementById('mensagem');
+    let nota = 0;
+
+    estrelas.forEach(estrela => {
+      estrela.addEventListener('click', () => {
+        nota = parseInt(estrela.dataset.valor);
+        estrelas.forEach(e => e.classList.remove('selecionada'));
+        for (let i = 0; i < nota; i++) {
+          estrelas[i].classList.add('selecionada');
+        }
+      });
+    });
+
+    const terapeutaId = localStorage.getItem('avaliarTerapeutaId');
+    const pacienteId = localStorage.getItem('id');
+
+    document.getElementById('formAvaliacao').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const comentario = document.getElementById('comentario').value.trim();
+
+      if (nota === 0 || comentario.length < 3) {
+        mensagem.textContent = 'Preencha todos os campos corretamente.';
+        mensagem.style.color = 'orange';
+        return;
+      }
+
+      try {
+        await axios.post('http://localhost:3000/avaliacoes', {
+          id_terapeuta: terapeutaId,
+          id_usuario: pacienteId,
+          nota,
+          comentario
+        });
+
+        mensagem.textContent = '✅ Avaliação enviada com sucesso!';
+        mensagem.style.color = 'lightgreen';
+        document.getElementById('formAvaliacao').reset();
+        estrelas.forEach(e => e.classList.remove('selecionada'));
+        nota = 0;
+      } catch (err) {
+        console.error(err);
+        mensagem.textContent = '❌ Erro ao enviar avaliação.';
+        mensagem.style.color = 'red';
+      }
+    });
+  </script>
+</body>
+</html>

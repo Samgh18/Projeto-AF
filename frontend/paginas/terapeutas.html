@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terapeutas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="text-white p-6">
+  <h2 class="text-3xl font-bold mb-6 text-center">Lista de Terapeutas</h2>
+
+  <div id="lista" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+
+  <script>
+    const lista = document.getElementById('lista');
+
+    async function carregarTerapeutas() {
+      try {
+        const res = await axios.get('http://localhost:3000/usuarios?tipo=terapeuta');
+
+        res.data.forEach(t => {
+          const card = document.createElement('div');
+          card.className = 'bg-white bg-opacity-20 backdrop-blur-md p-4 rounded-lg shadow-md';
+
+          card.innerHTML = `
+            <div class="flex items-center mb-3">
+              <img src="https://via.placeholder.com/60" class="rounded-full mr-3" alt="Foto do terapeuta" />
+              <div>
+                <h3 class="font-bold text-lg">${t.nome}</h3>
+                <p class="text-sm">Especialista em bem-estar emocional</p>
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <strong>Média de avaliação:</strong> <span class="text-yellow-300">⭐ ${t.media || '4.8'}</span>
+            </div>
+
+            <div class="mb-2">
+              <strong>Feedbacks recentes:</strong>
+              <ul class="list-disc pl-5 text-sm">
+                <li>"Muito atencioso!"</li>
+                <li>"Senti-me acolhida."</li>
+                <li>"Me ajudou bastante."</li>
+              </ul>
+            </div>
+
+            <button onclick="avaliar('${t._id}')" class="mt-3 bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded text-black font-semibold">
+              Avaliar
+            </button>
+          `;
+
+          lista.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        lista.innerHTML = '<p class="text-red-300">Erro ao carregar terapeutas.</p>';
+      }
+    }
+
+    function avaliar(terapeutaId) {
+      localStorage.setItem('avaliarTerapeutaId', terapeutaId);
+      window.location.href = 'avaliar.html'; // vamos criar essa página depois
+    }
+
+    carregarTerapeutas();
+  </script>
+</body>
+</html>

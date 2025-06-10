@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minha Agenda</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      color: white;
+      padding: 2rem;
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .horario-item {
+      display: inline-block;
+      background-color: rgba(255,255,255,0.2);
+      padding: 0.3rem 0.6rem;
+      margin: 0.2rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .horario-item.selecionado {
+      background-color: #fbbf24;
+      color: black;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="text-3xl font-bold mb-6 text-center">Minha Agenda</h1>
+
+  <div class="max-w-xl mx-auto bg-white bg-opacity-20 backdrop-blur-md rounded p-6 text-black">
+    <label for="data" class="block font-semibold mb-2">Escolha o dia:</label>
+    <input type="date" id="data" class="mb-4 w-full p-2 rounded" />
+
+    <label class="block font-semibold mb-2">Selecione horários disponíveis:</label>
+    <div id="horarios" class="mb-4"></div>
+
+    <button id="btnSalvar" class="bg-blue-600 hover:bg-blue-700 w-full py-2 rounded text-white font-bold">Salvar Agenda</button>
+    <p id="mensagem" class="mt-4 text-center font-semibold"></p>
+  </div>
+
+  <script>
+    const pacienteId = localStorage.getItem('id'); // pacienteId não usado aqui, mas terapeutaId sim
+    const terapeutaId = localStorage.getItem('id'); // id do terapeuta logado
+
+    const horariosPossiveis = [
+      '08:00', '08:30', '09:00', '09:30',
+      '10:00', '10:30', '11:00', '11:30',
+      '13:00', '13:30', '14:00', '14:30',
+      '15:00', '15:30', '16:00', '16:30',
+      '17:00', '17:30', '18:00'
+    ];
+
+    const divHorarios = document.getElementById('horarios');
+    const inputData = document.getElementById('data');
+    const btnSalvar = document.getElementById('btnSalvar');
+    const mensagem = document.getElementById('mensagem');
+
+    let horariosSelecionados = [];
+
+    // Gera os botões de horários na tela
+    function renderizarHorarios() {
+      divHorarios.innerHTML = '';
+      horariosPossiveis.forEach(h => {
+        const span = document.createElement('span');
+        span.textContent = h;
+        span.className = 'horario-item' + (horariosSelecionados.includes(h) ? ' selecionado' : '');
+        span.onclick = () => {
+          if (horariosSelecionados.includes(h)) {
+            horariosSelecionados = horariosSelecionados.filter(x => x !== h);
+          } else {
+            horariosSelecionados.push(h);
+          }
+          renderizarHorarios();
+        };
+        divHorarios.appendChild(span);
+      });
+    }
+
+    // Busca a agenda existente para a data selecionada
+    async function carregarAgenda() {
+      mensagem.textContent = '';
+      horariosSelecionados = [];
+      renderizarHorarios();
+
+      const data = inputData.value;
+      if (!data) return;
+
+      try {
+        const res = await axios.get(`http://localhost:3000/agenda/${terapeutaId}`);
+        // res.data é array com agendas do terapeuta
+        const agendaDia = res.data.find(a => a.data === data);
+        if (agendaDia) {
+          horariosSelecionados = agendaDia.horarios_disponiveis;
+          renderizarHorarios();
+          mensagem.textContent = `Agenda carregada para ${data}`;
+          mensagem.style.color = 'green';
+        } else {
+          mensagem.textContent = `Nenhuma agenda encontrada para ${data}`;
+          mensagem.style.color = 'gray';
+        }
+      } catch (e) {
+        mensagem.textContent = 'Erro ao carregar agenda.';
+        mensagem.style.color = 'red';
+      }
+    }
+
+    // Salva os horários selecionados para a data
+    async function salvarAgenda() {
+      const data = inputData.value;
+      if (!data) {
+        mensagem.textContent = 'Selecione uma data.';
+        mensagem.style.color = 'orange';
+        return;
+      }
+      if (horariosSelecionados.length === 0) {
+        mensagem.textContent = 'Selecione pelo menos um horário.';
+        mensagem.style.color = 'orange';
+        return;
+      }
+
+      try {
+        await axios.post('http://localhost:3000/agenda/salvar', {
+          id_terapeuta: terapeutaId,
+          data,
+          horarios_disponiveis: horariosSelecionados
+        });
+        mensagem.textContent = '✅ Agenda salva com sucesso!';
+        mensagem.style.color = 'green';
+      } catch (e) {
+        mensagem.textContent = '❌ Erro ao salvar agenda.';
+        mensagem.style.color = 'red';
+      }
+    }
+
+    inputData.addEventListener('change', carregarAgenda);
+    btnSalvar.addEventListener('click', salvarAgenda);
+
+    renderizarHorarios();
+  </script>
+</body>
+</html>

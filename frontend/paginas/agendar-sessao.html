@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agendar Sessão</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+  </style>
+</head>
+<body class="text-white p-6">
+
+  <h2 class="text-3xl font-bold mb-6 text-center">Agendar Nova Sessão</h2>
+
+  <form id="formAgendamento" class="max-w-xl mx-auto bg-white bg-opacity-20 backdrop-blur-md p-6 rounded-lg space-y-4">
+    <div>
+      <label class="block mb-1 font-semibold">Terapeuta</label>
+      <select id="terapeuta" class="w-full p-2 rounded text-black" required></select>
+    </div>
+
+    <div>
+      <label class="block mb-1 font-semibold">Data</label>
+      <input type="date" id="data" class="w-full p-2 rounded text-black" required />
+    </div>
+
+    <div>
+      <label class="block mb-1 font-semibold">Diagnóstico (opcional)</label>
+      <input type="text" id="diagnostico" class="w-full p-2 rounded text-black" />
+    </div>
+
+    <div>
+      <label class="block mb-1 font-semibold">Terapia Aplicada (opcional)</label>
+      <input type="text" id="terapia" class="w-full p-2 rounded text-black" />
+    </div>
+
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-white font-bold w-full">Agendar</button>
+
+    <p id="mensagem" class="text-center mt-2 font-semibold"></p>
+  </form>
+
+  <script>
+    const selectTerapeuta = document.getElementById('terapeuta');
+    const form = document.getElementById('formAgendamento');
+    const mensagem = document.getElementById('mensagem');
+    const pacienteId = localStorage.getItem('id');
+
+    async function carregarTerapeutas() {
+      try {
+        const res = await axios.get('http://localhost:3000/usuarios?tipo=terapeuta');
+        res.data.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t._id;
+          option.textContent = t.nome;
+          selectTerapeuta.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Erro ao carregar terapeutas:', err);
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id_terapeuta = selectTerapeuta.value;
+      const data = document.getElementById('data').value;
+      const diagnostico = document.getElementById('diagnostico').value;
+      const terapia = document.getElementById('terapia').value;
+
+      if (!id_terapeuta || !data) {
+        mensagem.textContent = 'Preencha os campos obrigatórios.';
+        mensagem.style.color = 'yellow';
+        return;
+      }
+
+      try {
+        const res = await axios.post('http://localhost:3000/sessoes/cadastrar', {
+          id_usuario: pacienteId,
+          id_terapeuta,
+          data,
+          diagnostico,
+          terapia
+        });
+
+        mensagem.textContent = '✅ Sessão agendada com sucesso!';
+        mensagem.style.color = 'lightgreen';
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        mensagem.textContent = '❌ Erro ao agendar sessão.';
+        mensagem.style.color = 'red';
+      }
+    });
+
+    carregarTerapeutas();
+  </script>
+</body>
+</html>
