@@ -25,10 +25,10 @@ exports.login = async (req, res) => {
 
   try {
     const usuario = await Usuario.findOne({ email });
-    if (!usuario) return res.status(401).send('Credenciais inválidas');
+    if (!usuario) return res.status(401).json({ error: 'Credenciais inválidas' });
 
     const senhaOk = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaOk) return res.status(401).send('Credenciais inválidas');
+    if (!senhaOk) return res.status(401).json({ error: 'Credenciais inválidas' });
 
     res.json({
       mensagem: 'Login bem-sucedido.',

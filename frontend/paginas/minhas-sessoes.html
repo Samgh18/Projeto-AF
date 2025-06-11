@@ -2,65 +2,65 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Minhas Sessões</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
-      background-size: 200% 200%;
-      animation: gradientShift 15s ease infinite;
-    }
-
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-  </style>
 </head>
-<body class="text-white p-6">
+<body class="p-4 bg-gradient-to-br from-indigo-900 to-purple-800 min-h-screen text-white font-sans">
+  <h2 class="text-3xl font-bold mb-6">Histórico de Sessões</h2>
 
-  <h2 class="text-3xl font-bold mb-6 text-center">Minhas Sessões</h2>
-
-  <div id="lista-sessoes" class="space-y-4">
-    <p class="text-gray-200">Carregando sessões...</p>
-  </div>
+  <div id="lista-sessoes" class="space-y-4"></div>
 
   <script>
-    const pacienteId = localStorage.getItem('id');
+    const idUsuario = localStorage.getItem('id');
     const lista = document.getElementById('lista-sessoes');
 
     async function carregarSessoes() {
       try {
-        const res = await axios.get(`http://localhost:3000/sessoes/paciente/${pacienteId}`);
-        const sessoes = res.data;
-
-        if (sessoes.length === 0) {
-          lista.innerHTML = '<p class="text-white text-center">Nenhuma sessão agendada.</p>';
-          return;
-        }
+        const res = await fetch(`http://localhost:3000/sessoes/paciente/${idUsuario}`);
+        if (!res.ok) throw new Error('Erro ao buscar sessões');
+        const sessoes = await res.json();
 
         lista.innerHTML = '';
-        sessoes.forEach(sessao => {
-          const item = document.createElement('div');
-          item.className = 'bg-white bg-opacity-20 backdrop-blur-md rounded p-4 shadow';
 
-          item.innerHTML = `
-            <p><strong>Data:</strong> ${sessao.data}</p>
-            <p><strong>Diagnóstico:</strong> ${sessao.diagnostico || '---'}</p>
-            <p><strong>Terapia:</strong> ${sessao.terapia || '---'}</p>
+        if (sessoes.length === 0) {
+          lista.innerHTML = `
+            <div class="bg-white bg-opacity-10 p-6 rounded-lg shadow text-center">
+              <p class="text-lg">Nenhum histórico de sessão encontrado.</p>
+              <a href="#" onclick="carregarPagina({ id: 'agendar-sessao', nome: 'Agendar Sessão' })" 
+                 class="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+                Agendar Sessão
+              </a>
+            </div>
           `;
+        } else {
+          sessoes.forEach(sessao => {
+            const item = document.createElement('div');
+            item.className = 'bg-white bg-opacity-10 p-4 rounded shadow';
 
-          lista.appendChild(item);
-        });
-      } catch (err) {
-        console.error(err);
-        lista.innerHTML = '<p class="text-red-400">Erro ao carregar sessões.</p>';
+            const data = new Date(sessao.data).toLocaleDateString('pt-BR');
+
+            item.innerHTML = `
+              <p><strong>Data:</strong> ${data}</p>
+              <p><strong>Terapeuta:</strong> ${sessao.nomeTerapeuta}</p>
+              ${sessao.diagnostico ? `<p><strong>Diagnóstico:</strong> ${sessao.diagnostico}</p>` : ''}
+              ${sessao.terapia ? `<p><strong>Terapia Aplicada:</strong> ${sessao.terapia}</p>` : ''}
+            `;
+
+            lista.appendChild(item);
+          });
+        }
+      } catch (e) {
+        lista.innerHTML = `<p class="text-red-400">Erro ao carregar sessões: ${e.message}</p>`;
       }
+    }
+
+    // Permite navegação via menu lateral (usado no dashboard)
+    function carregarPagina(pagina) {
+      localStorage.setItem('paginaSelecionada', pagina.id);
+      document.getElementById('titulo').innerText = pagina.nome;
+      fetch(`paginas/${pagina.id}.html`)
+        .then(res => res.text())
+        .then(html => document.getElementById('content').innerHTML = html);
     }
 
     carregarSessoes();

@@ -1,16 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const sessaoController = require('../controllers/sessaoController');
+const Sessao = require('../models/Sessao');
+const Usuario = require('../models/Usuario');
 
-router.post('/cadastrar', sessaoController.cadastrar);
-router.get('/todas', sessaoController.listarTodas);
-router.get('/paciente/:id_usuario', sessaoController.listarPorPaciente);
-router.get('/terapeuta/:id_terapeuta', sessaoController.listarPorTerapeuta);
-
-module.exports = router;
-
-
-// Cadastrar sessão
+// Cadastrar nova sessão
 router.post('/cadastrar', async (req, res) => {
   const { id_terapeuta, id_usuario, data, diagnostico, terapia } = req.body;
 
@@ -19,7 +12,14 @@ router.post('/cadastrar', async (req, res) => {
   }
 
   try {
-    const novaSessao = new Sessao({ id_terapeuta, id_usuario, data, diagnostico, terapia });
+    const novaSessao = new Sessao({
+      id_terapeuta,
+      id_usuario,
+      data,
+      diagnostico,
+      terapia
+    });
+
     await novaSessao.save();
     res.send('Sessão cadastrada com sucesso');
   } catch (e) {
@@ -27,7 +27,7 @@ router.post('/cadastrar', async (req, res) => {
   }
 });
 
-// Listar todas sessões (para terapeuta)
+// Listar todas as sessões
 router.get('/todas', async (req, res) => {
   try {
     const sessoes = await Sessao.find();
@@ -37,17 +37,28 @@ router.get('/todas', async (req, res) => {
   }
 });
 
-// Listar sessões de um paciente (para paciente)
+// Listar sessões por paciente (com nome do terapeuta)
 router.get('/paciente/:id_usuario', async (req, res) => {
   try {
     const sessoes = await Sessao.find({ id_usuario: req.params.id_usuario });
-    res.json(sessoes);
+
+    const sessoesComNomes = await Promise.all(
+      sessoes.map(async (sessao) => {
+        const terapeuta = await Usuario.findById(sessao.id_terapeuta);
+        return {
+          ...sessao.toObject(),
+          nomeTerapeuta: terapeuta ? terapeuta.nome : 'Terapeuta não encontrado'
+        };
+      })
+    );
+
+    res.json(sessoesComNomes);
   } catch (e) {
     res.status(500).send('Erro ao listar sessões do paciente: ' + e.message);
   }
 });
 
-// Listar sessões de um terapeuta (para terapeuta)
+// Listar sessões por terapeuta (sem alterações por enquanto)
 router.get('/terapeuta/:id_terapeuta', async (req, res) => {
   try {
     const sessoes = await Sessao.find({ id_terapeuta: req.params.id_terapeuta });

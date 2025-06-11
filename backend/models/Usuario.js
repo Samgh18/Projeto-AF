@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
 const usuarioSchema = new mongoose.Schema({
-nome: String,
-email: { type: String, unique: true },
-senha: String,
-tipo: { type: String, enum: ['usuário', 'terapeuta'], required: true }
+  nome: { type: String, required: true },
+  email: { type: String, unique: true, required: true },
+  senha: { type: String, required: true },
+  tipo: { type: String, enum: ['paciente', 'terapeuta'], required: true }
 });
 
-module.exports = mongoose.model('Usuario', usuarioSchema);
+// Verifica se o model já foi registrado para evitar erro OverwriteModelError
+module.exports = mongoose.models.Usuario || mongoose.model('Usuario', usuarioSchema);

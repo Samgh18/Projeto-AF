@@ -8,4 +8,4 @@ const avaliacaoSchema = new mongoose.Schema({
   data: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Avaliacao', avaliacaoSchema);
+module.exports = mongoose.models.Avaliacao || mongoose.model('Avaliacao', avaliacaoSchema);

@@ -8,6 +8,8 @@ const sessoesRoutes = require('./routes/sessoes');
 const conteudosRoutes = require('./routes/conteudos');
 const chatRoutes = require('./routes/chat');
 const agendaRoutes = require('./routes/agenda');
+const avaliacoesRoutes = require('./routes/avaliacao');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -20,9 +22,10 @@ app.use('/usuarios', usuariosRoutes);
 app.use('/sessoes', sessoesRoutes);
 app.use('/conteudos', conteudosRoutes);
 app.use('/chat', chatRoutes);
-app.use('/avaliacoes', require('./routes/avaliacao'));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/avaliacoes', avaliacoesRoutes);
 app.use('/agenda', agendaRoutes);
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (req, res) => {
   res.send('Plataforma de Suporte Emocional API');
