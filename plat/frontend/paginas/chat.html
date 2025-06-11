@@ -1,132 +1,121 @@
-<h2>Chat</h2>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-r from-indigo-900 to-purple-900 text-white min-h-screen p-4 font-sans">
 
-<div>
-  <label>Seu ID:</label>
-  <input type="text" id="meuId" class="form-control" readonly />
-</div>
+  <div class="max-w-5xl mx-auto flex gap-6">
+    <!-- Lista de usuários -->
+    <aside class="w-1/4 bg-white bg-opacity-10 rounded-lg p-4">
+      <h2 class="text-xl font-bold mb-4">Conversar com:</h2>
+      <ul id="usuariosList" class="space-y-2"></ul>
+    </aside>
 
-<div class="mt-3">
-  <label>Contatos disponíveis:</label>
-  <ul id="listaContatos" class="list-group" style="max-height:200px; overflow-y:auto;"></ul>
-</div>
+    <!-- Chat -->
+    <main class="flex-1 bg-white bg-opacity-10 rounded-lg p-4 flex flex-col">
+      <h2 class="text-xl font-bold mb-2">Chat</h2>
+      <div id="chatBox" class="flex-1 overflow-y-auto bg-black bg-opacity-20 rounded-lg p-4 mb-4 h-96">
+        <p class="text-gray-300 text-sm italic">Selecione um usuário para iniciar uma conversa</p>
+      </div>
 
-<div id="chatArea" class="mt-4" style="display:none;">
-  <h5>Conversa com: <span id="contatoNome"></span></h5>
-  <div id="mensagens" style="height:300px; overflow-y:auto; border:1px solid #ccc; padding:10px; background:#fff;"></div>
-  <div class="input-group mt-2">
-    <input type="text" id="inputMsg" class="form-control" placeholder="Digite a mensagem" />
-    <button id="btnEnviar" class="btn btn-success">Enviar</button>
+      <form id="chatForm" class="flex gap-2">
+        <input id="mensagemInput" type="text" placeholder="Digite sua mensagem" required
+               class="flex-1 p-2 rounded text-black" />
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+          Enviar
+        </button>
+      </form>
+    </main>
   </div>
-</div>
 
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-<script>
-  const socket = io('http://localhost:3000');
+  <script>
+    const usuarioId = localStorage.getItem('id');
+    const tipo = localStorage.getItem('tipo');
+    const nome = localStorage.getItem('nome');
+    let destinatarioId = null;
 
-  let meuId = localStorage.getItem('id');
-  let meuTipo = localStorage.getItem('tipo'); // 'usuário' ou 'terapeuta'
-  document.getElementById('meuId').value = meuId;
+    const usuariosList = document.getElementById('usuariosList');
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const mensagemInput = document.getElementById('mensagemInput');
 
-  let salaId = null;
-  let contatoSelecionado = null;
+    async function carregarUsuarios() {
+      try {
+        const tipoOposto = tipo === 'terapeuta' ? 'paciente' : 'terapeuta';
+        const res = await fetch(`http://localhost:3000/usuarios?tipo=${tipoOposto}`);
+        const usuarios = await res.json();
 
-  const listaContatos = document.getElementById('listaContatos');
-  const chatArea = document.getElementById('chatArea');
-  const contatoNomeSpan = document.getElementById('contatoNome');
-
-  // Buscar contatos automaticamente
-  async function carregarContatos() {
-    let url;
-    if(meuTipo === 'usuário') {
-      // Usuário vê terapeutas
-      url = 'http://localhost:3000/usuarios?tipo=terapeuta';
-    } else {
-      // Terapeuta vê pacientes
-      url = 'http://localhost:3000/usuarios?tipo=usuário';
+        usuariosList.innerHTML = '';
+        usuarios.forEach(u => {
+          const li = document.createElement('li');
+          li.textContent = u.nome;
+          li.className = 'cursor-pointer hover:underline';
+          li.onclick = () => selecionarUsuario(u._id, u.nome);
+          usuariosList.appendChild(li);
+        });
+      } catch (err) {
+        console.error('Erro ao carregar usuários:', err);
+        usuariosList.innerHTML = '<p class="text-red-300">Erro ao buscar usuários</p>';
+      }
     }
 
-    try {
-      const res = await fetch(url);
-      const contatos = await res.json();
-      listaContatos.innerHTML = '';
-      contatos.forEach(c => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item list-group-item-action';
-        li.textContent = c.nome;
-        li.dataset.id = c._id;
-        li.style.cursor = 'pointer';
-
-        li.addEventListener('click', () => abrirChat(c._id, c.nome));
-
-        listaContatos.appendChild(li);
-      });
-    } catch(e) {
-      listaContatos.innerHTML = '<li class="list-group-item text-danger">Erro ao carregar contatos</li>';
+    async function selecionarUsuario(id, nome) {
+      destinatarioId = id;
+      chatBox.innerHTML = `<p class="text-gray-300 text-sm italic">Conversando com <strong>${nome}</strong></p>`;
+      await carregarMensagens();
     }
-  }
 
-  function abrirChat(idContato, nomeContato) {
-    contatoSelecionado = idContato;
-    contatoNomeSpan.textContent = nomeContato;
-    salaId = [meuId, contatoSelecionado].sort().join('_');
-    socket.emit('joinRoom', salaId);
-    chatArea.style.display = 'block';
-    carregarHistorico(meuId, contatoSelecionado);
-  }
+    async function carregarMensagens() {
+      if (!destinatarioId) return;
 
-  socket.on('receiveMessage', (data) => {
-    if (data.roomId === salaId) {
-      adicionarMensagem(data.remetenteId, data.texto);
+      try {
+        const res = await fetch(`http://localhost:3000/chat/conversa/${usuarioId}/${destinatarioId}`);
+        const mensagens = await res.json();
+
+        chatBox.innerHTML = '';
+        mensagens.forEach(msg => {
+          const div = document.createElement('div');
+          div.className = 'mb-2';
+          const alinhamento = msg.remetenteId === usuarioId ? 'text-right' : 'text-left';
+          div.innerHTML = `
+            <p class="${alinhamento}">
+              <span class="bg-white bg-opacity-20 px-3 py-1 rounded inline-block">
+                ${msg.texto}
+              </span>
+            </p>
+          `;
+          chatBox.appendChild(div);
+        });
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+      } catch (err) {
+        console.error('Erro ao buscar mensagens:', err);
+      }
     }
-  });
 
-  document.getElementById('btnEnviar').addEventListener('click', () => {
-    const texto = document.getElementById('inputMsg').value.trim();
-    if (!texto) return alert('Digite uma mensagem');
-    if(!contatoSelecionado) return alert('Selecione um contato primeiro');
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const texto = mensagemInput.value.trim();
+      if (!texto || !destinatarioId) return;
 
-    const data = {
-      roomId: salaId,
-      remetenteId: meuId,
-      texto: texto
-    };
+      try {
+        await fetch('http://localhost:3000/chat/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ remetenteId: usuarioId, destinatarioId, texto })
+        });
 
-    socket.emit('sendMessage', data);
-
-    // Salvar no banco via API
-    fetch('http://localhost:3000/chat/enviar', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        remetenteId: meuId,
-        destinatarioId: contatoSelecionado,
-        texto: texto
-      })
+        mensagemInput.value = '';
+        await carregarMensagens();
+      } catch (err) {
+        console.error('Erro ao enviar mensagem:', err);
+      }
     });
 
-    adicionarMensagem(meuId, texto);
-    document.getElementById('inputMsg').value = '';
-  });
-
-  function adicionarMensagem(remetente, texto) {
-    const div = document.getElementById('mensagens');
-    const msgDiv = document.createElement('div');
-    msgDiv.classList.add('mb-2');
-    msgDiv.style.fontWeight = remetente === meuId ? 'bold' : 'normal';
-    msgDiv.textContent = (remetente === meuId ? 'Você: ' : 'Outro: ') + texto;
-    div.appendChild(msgDiv);
-    div.scrollTop = div.scrollHeight;
-  }
-
-  async function carregarHistorico(user1, user2) {
-    const res = await fetch(`http://localhost:3000/chat/conversa/${user1}/${user2}`);
-    const mensagens = await res.json();
-    const div = document.getElementById('mensagens');
-    div.innerHTML = '';
-    mensagens.forEach(m => {
-      adicionarMensagem(m.remetenteId, m.texto);
-    });
-  }
-
-  carregarContatos();
-</script>
+    carregarUsuarios();
+  </script>
+</body>
+</html>

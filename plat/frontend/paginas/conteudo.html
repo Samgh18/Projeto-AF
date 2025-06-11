@@ -1,53 +1,185 @@
-<h2>Conteúdo (com Upload)</h2>
-<p>Envie materiais para compartilhar com os pacientes.</p>
-<form id="formUpload">
-  <div class="mb-3">
-    <label class="form-label">Título do Conteúdo</label>
-    <input type="text" class="form-control" id="titulo" required />
-  </div>
-  <div class="mb-3">
-    <label class="form-label">Arquivo (PDF, artigo...)</label>
-    <input type="file" class="form-control" id="arquivo" required />
-  </div>
-  <button class="btn btn-primary" type="submit">Enviar</button>
-  <p id="mensagemUpload" class="mt-2"></p>
-</form>
-
-<script>
-  document.getElementById('formUpload')?.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('titulo', document.getElementById('titulo').value);
-    formData.append('arquivo', document.getElementById('arquivo').files[0]);
-    formData.append('terapeutaId', localStorage.getItem('id'));
-
-    try {
-      const res = await fetch('http://localhost:3000/conteudo/upload', {
-        method: 'POST',
-        body: formData
-      });
-      const text = await res.text();
-      document.getElementById('mensagemUpload').textContent = text;
-    } catch (e) {
-      document.getElementById('mensagemUpload').textContent = 'Erro ao enviar';
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Conteúdos - Plataforma</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
+      background-size: 200% 200%;
+      animation: gradientShift 15s ease infinite;
+      color: white;
+      padding: 2rem;
     }
-  });
-
-  // Listar conteúdos para pacientes
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (!document.getElementById('lista-conteudo')) return;
-    const lista = document.getElementById('lista-conteudo');
-    try {
-      const res = await fetch('http://localhost:3000/conteudo/listar');
-      const conteudos = await res.json();
-      conteudos.forEach(c => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.innerHTML = `<strong>${c.titulo}</strong> - <a href="http://localhost:3000/uploads/${c.arquivo}" target="_blank">Abrir</a>`;
-        lista.appendChild(li);
-      });
-    } catch (e) {
-      lista.innerHTML = '<li class="list-group-item">Erro ao carregar conteúdo</li>';
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
-  });
-</script>
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: rgba(255 255 255 / 0.15);
+      padding: 1.5rem;
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    .conteudo-item {
+      background: rgba(255 255 255 / 0.25);
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      transition: background-color 0.3s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .conteudo-item:hover {
+      background: rgba(255 255 255 / 0.4);
+    }
+    .btn-upload {
+      background-color: #fbbf24;
+      color: black;
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      border: none;
+      margin-top: 1rem;
+    }
+    .btn-upload:hover {
+      background-color: #f59e0b;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .file-label {
+      display: inline-block;
+      background-color: #3b82f6;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 1rem;
+      color: white;
+      transition: background-color 0.3s;
+    }
+    .file-label:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1 class="text-3xl font-bold mb-6 text-center">Conteúdos Disponíveis</h1>
+
+    <div id="listaConteudos"></div>
+
+    <div id="uploadContainer" class="hidden">
+      <h2 class="text-xl font-semibold mt-6 mb-2">Enviar novo conteúdo</h2>
+      <input type="text" id="titulo" placeholder="Título do conteúdo" class="w-full p-2 rounded mb-2 text-black" />
+      <label for="arquivo" class="file-label">Selecionar arquivo</label>
+      <input type="file" id="arquivo" accept=".pdf,.doc,.docx,.txt,.epub" />
+      <button id="btnEnviar" class="btn-upload">Enviar</button>
+      <p id="msgUpload" class="mt-2"></p>
+    </div>
+  </div>
+
+  <script>
+    const listaConteudos = document.getElementById('listaConteudos');
+    const uploadContainer = document.getElementById('uploadContainer');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const arquivoInput = document.getElementById('arquivo');
+    const tituloInput = document.getElementById('titulo');
+    const msgUpload = document.getElementById('msgUpload');
+
+    // Define se o usuário é terapeuta para mostrar upload
+    const tipoUsuario = localStorage.getItem('tipo');
+    if (tipoUsuario === 'terapeuta') {
+      uploadContainer.classList.remove('hidden');
+    }
+
+    // Função para buscar conteúdos do backend
+    async function buscarConteudos() {
+      try {
+        const res = await axios.get('http://localhost:3000/conteudos/listar');
+        const conteudos = res.data;
+
+        if (conteudos.length === 0) {
+          listaConteudos.innerHTML = '<p class="text-center">Nenhum conteúdo disponível no momento.</p>';
+          return;
+        }
+
+        listaConteudos.innerHTML = '';
+        conteudos.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'conteudo-item';
+
+          // Link para o arquivo, que deve estar servido pelo backend em /uploads/
+          div.innerHTML = `
+            <div>${c.titulo}</div>
+            <a href="http://localhost:3000/uploads/${c.arquivo}" target="_blank" class="underline hover:text-yellow-300">Abrir</a>
+          `;
+
+          listaConteudos.appendChild(div);
+        });
+      } catch (e) {
+        listaConteudos.innerHTML = '<p class="text-center text-red-400">Erro ao carregar conteúdos.</p>';
+      }
+    }
+
+    // Upload de conteúdo para terapeutas
+    btnEnviar.addEventListener('click', async () => {
+      const titulo = tituloInput.value.trim();
+      const arquivo = arquivoInput.files[0];
+
+      if (!titulo) {
+        msgUpload.textContent = 'Informe o título do conteúdo.';
+        msgUpload.style.color = 'orange';
+        return;
+      }
+      if (!arquivo) {
+        msgUpload.textContent = 'Selecione um arquivo para enviar.';
+        msgUpload.style.color = 'orange';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('titulo', titulo);
+      formData.append('terapeutaId', localStorage.getItem('id'));
+      formData.append('arquivo', arquivo);
+
+      try {
+        const res = await axios.post('http://localhost:3000/conteudos/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        msgUpload.textContent = 'Conteúdo enviado com sucesso!';
+        msgUpload.style.color = 'green';
+
+        // Limpa inputs
+        tituloInput.value = '';
+        arquivoInput.value = '';
+
+        // Atualiza lista
+        buscarConteudos();
+      } catch (e) {
+        msgUpload.textContent = 'Erro ao enviar conteúdo.';
+        msgUpload.style.color = 'red';
+      }
+    });
+
+    // Inicializa a lista
+    buscarConteudos();
+  </script>
+</body>
+</html>

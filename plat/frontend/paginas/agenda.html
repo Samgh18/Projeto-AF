@@ -1,176 +1,153 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gerenciamento de Agendas</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Minha Agenda</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #1e3a8a, #6b21a8);
       background-size: 200% 200%;
       animation: gradientShift 15s ease infinite;
+      color: white;
+      padding: 2rem;
     }
     @keyframes gradientShift {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    .fade-in {
-      animation: fadeIn 0.8s ease-out;
+    .horario-item {
+      display: inline-block;
+      background-color: rgba(255,255,255,0.2);
+      padding: 0.3rem 0.6rem;
+      margin: 0.2rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      user-select: none;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .btn-hover {
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn-hover:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-    #particles-js {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
-    .theme-light {
-      background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
-    }
-    .theme-light .bg-white {
-      background-color: #ffffff;
-    }
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid #ffffff;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-      display: none;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .horario-item.selecionado {
+      background-color: #fbbf24;
+      color: black;
+      font-weight: bold;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <div id="particles-js"></div>
-  <header class="bg-white bg-opacity-10 backdrop-blur-md py-4 px-6 flex justify-between items-center">
-    <div class="flex items-center space-x-2">
-      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-      </svg>
-      <h1 class="text-2xl font-bold text-white">Suporte Emocional</h1>
-    </div>
-    <button id="theme-toggle" class="text-white hover:text-gray-200">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-      </svg>
-    </button>
-  </header>
+<body>
+  <h1 class="text-3xl font-bold mb-6 text-center">Minha Agenda</h1>
 
-  <main class="flex-grow flex items-center justify-center px-4 py-8">
-    <div id="app" class="w-full max-w-2xl"></div>
-  </main>
+  <div class="max-w-xl mx-auto bg-white bg-opacity-20 backdrop-blur-md rounded p-6 text-black">
+    <label for="data" class="block font-semibold mb-2">Escolha o dia:</label>
+    <input type="date" id="data" class="mb-4 w-full p-2 rounded" />
 
-  <footer class="bg-white bg-opacity-10 backdrop-blur-md py-4 text-center text-white text-sm">
-    <p>© 2025 Plataforma de Suporte Emocional. Todos os direitos reservados.</p>
-    <div class="mt-2 space-x-4">
-      <a href="#" class="hover:underline">Sobre</a>
-      <a href="#" class="hover:underline">Contato</a>
-      <a href="#" class="hover:underline">Termos</a>
-    </div>
-  </footer>
+    <label class="block font-semibold mb-2">Selecione horários disponíveis:</label>
+    <div id="horarios" class="mb-4"></div>
 
-  <script type="text/babel">
-    const App = () => {
-      const [isLoading, setIsLoading] = React.useState(false);
-      const [schedule, setSchedule] = React.useState({ date: '', time: '' });
+    <button id="btnSalvar" class="bg-blue-600 hover:bg-blue-700 w-full py-2 rounded text-white font-bold">Salvar Agenda</button>
+    <p id="mensagem" class="mt-4 text-center font-semibold"></p>
+  </div>
 
-      const handleAddSchedule = () => {
-        setIsLoading(true);
-        setTimeout(() => {
-          setIsLoading(false);
-          alert('Agendamento adicionado com sucesso!');
-          setSchedule({ date: '', time: '' });
-        }, 1000);
-      };
+  <script>
+    const pacienteId = localStorage.getItem('id'); // pacienteId não usado aqui, mas terapeutaId sim
+    const terapeutaId = localStorage.getItem('id'); // id do terapeuta logado
 
-      return (
-        <div className="bg-white bg-opacity-90 rounded-xl shadow-2xl p-8 fade-in w-full">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Gerenciamento de Agendas</h2>
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="scheduleDate" className="block text-sm font-medium text-gray-700">Data</label>
-              <input
-                type="date"
-                id="scheduleDate"
-                value={schedule.date}
-                onChange={(e) => setSchedule({ ...schedule, date: e.target.value })}
-                className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label htmlFor="scheduleTime" className="block text-sm font-medium text-gray-700">Horário</label>
-              <input
-                type="time"
-                id="scheduleTime"
-                value={schedule.time}
-                onChange={(e) => setSchedule({ ...schedule, time: e.target.value })}
-                className="mt-1 w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-            </div>
-            <button
-              onClick={handleAddSchedule}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg btn-hover flex items-center justify-center"
-            >
-              {isLoading ? <span className="spinner" /> : 'Agendar'}
-            </button>
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Agendamentos</h3>
-              <ul className="list-disc pl-5 space-y-2">
-                <li className="text-gray-600">10/06/2025 - 14:00</li>
-                <li className="text-gray-600">11/06/2025 - 10:30</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      );
-    };
+    const horariosPossiveis = [
+      '08:00', '08:30', '09:00', '09:30',
+      '10:00', '10:30', '11:00', '11:30',
+      '13:00', '13:30', '14:00', '14:30',
+      '15:00', '15:30', '16:00', '16:30',
+      '17:00', '17:30', '18:00'
+    ];
 
-    ReactDOM.render(<App />, document.getElementById('app'));
+    const divHorarios = document.getElementById('horarios');
+    const inputData = document.getElementById('data');
+    const btnSalvar = document.getElementById('btnSalvar');
+    const mensagem = document.getElementById('mensagem');
 
-    particlesJS('particles-js', {
-      particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: '#ffffff' },
-        shape: { type: 'circle' },
-        opacity: { value: 0.5, random: true },
-        size: { value: 3, random: true },
-        line_linked: { enable: false },
-        move: { enable: true, speed: 2, direction: 'none', random: true }
-      },
-      interactivity: {
-        detect_on: 'canvas',
-        events: { onhover: { enable: true, mode: 'repulse' } },
-        modes: { repulse: { distance: 100, duration: 0.4 } }
+    let horariosSelecionados = [];
+
+    // Gera os botões de horários na tela
+    function renderizarHorarios() {
+      divHorarios.innerHTML = '';
+      horariosPossiveis.forEach(h => {
+        const span = document.createElement('span');
+        span.textContent = h;
+        span.className = 'horario-item' + (horariosSelecionados.includes(h) ? ' selecionado' : '');
+        span.onclick = () => {
+          if (horariosSelecionados.includes(h)) {
+            horariosSelecionados = horariosSelecionados.filter(x => x !== h);
+          } else {
+            horariosSelecionados.push(h);
+          }
+          renderizarHorarios();
+        };
+        divHorarios.appendChild(span);
+      });
+    }
+
+    // Busca a agenda existente para a data selecionada
+    async function carregarAgenda() {
+      mensagem.textContent = '';
+      horariosSelecionados = [];
+      renderizarHorarios();
+
+      const data = inputData.value;
+      if (!data) return;
+
+      try {
+        const res = await axios.get(`http://localhost:3000/agenda/${terapeutaId}`);
+        // res.data é array com agendas do terapeuta
+        const agendaDia = res.data.find(a => a.data === data);
+        if (agendaDia) {
+          horariosSelecionados = agendaDia.horarios_disponiveis;
+          renderizarHorarios();
+          mensagem.textContent = `Agenda carregada para ${data}`;
+          mensagem.style.color = 'green';
+        } else {
+          mensagem.textContent = `Nenhuma agenda encontrada para ${data}`;
+          mensagem.style.color = 'gray';
+        }
+      } catch (e) {
+        mensagem.textContent = 'Erro ao carregar agenda.';
+        mensagem.style.color = 'red';
       }
-    });
+    }
 
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-      document.body.classList.toggle('theme-light');
-    });
+    // Salva os horários selecionados para a data
+    async function salvarAgenda() {
+      const data = inputData.value;
+      if (!data) {
+        mensagem.textContent = 'Selecione uma data.';
+        mensagem.style.color = 'orange';
+        return;
+      }
+      if (horariosSelecionados.length === 0) {
+        mensagem.textContent = 'Selecione pelo menos um horário.';
+        mensagem.style.color = 'orange';
+        return;
+      }
+
+      try {
+        await axios.post('http://localhost:3000/agenda/salvar', {
+          id_terapeuta: terapeutaId,
+          data,
+          horarios_disponiveis: horariosSelecionados
+        });
+        mensagem.textContent = '✅ Agenda salva com sucesso!';
+        mensagem.style.color = 'green';
+      } catch (e) {
+        mensagem.textContent = '❌ Erro ao salvar agenda.';
+        mensagem.style.color = 'red';
+      }
+    }
+
+    inputData.addEventListener('change', carregarAgenda);
+    btnSalvar.addEventListener('click', salvarAgenda);
+
+    renderizarHorarios();
   </script>
+</body>
 </html>

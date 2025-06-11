@@ -1,16 +1,62 @@
-<h2>Terapeutas Disponíveis</h2>
-<div class="card mb-3">
-  <div class="row g-0">
-    <div class="col-md-2">
-      <img src="https://via.placeholder.com/100" class="img-fluid rounded-start" alt="Dr João">
-    </div>
-    <div class="col-md-10">
-      <div class="card-body">
-        <h5 class="card-title">Dr. João da Silva</h5>
-        <p class="card-text">Especialista em psicoterapia breve, 10 anos de experiência.</p>
-        <p class="card-text"><small class="text-muted">⭐ 4.5 (32 avaliações)</small></p>
-        <button class="btn btn-outline-primary btn-sm">Avaliar</button>
-      </div>
-    </div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lista de Terapeutas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 to-purple-800 min-h-screen text-white font-sans flex flex-col items-center p-6">
+
+  <div class="max-w-4xl w-full">
+    <h2 class="text-3xl font-bold text-center mb-8">Lista de Terapeutas</h2>
+    <div id="listaTerapeutas" class="space-y-6"></div>
   </div>
-</div>
+
+  <script>
+    async function carregarTerapeutas() {
+      try {
+        const resUsuarios = await fetch('http://localhost:3000/usuarios?tipo=terapeuta');
+        const terapeutas = await resUsuarios.json();
+
+        const container = document.getElementById('listaTerapeutas');
+        container.innerHTML = '';
+
+        for (const t of terapeutas) {
+          const resAvaliacoes = await fetch(`http://localhost:3000/avaliacoes/terapeuta/${t._id}`);
+          const avaliacoes = await resAvaliacoes.json();
+
+          const media = avaliacoes.length
+            ? (avaliacoes.reduce((acc, a) => acc + a.estrelas, 0) / avaliacoes.length).toFixed(1)
+            : 'Sem avaliações';
+
+          const recentes = avaliacoes.slice(-3).reverse();
+
+          const card = document.createElement('div');
+          card.className = 'bg-white bg-opacity-10 backdrop-blur p-6 rounded-xl shadow-lg';
+
+          card.innerHTML = `
+            <h3 class="text-xl font-bold text-white mb-2">${t.nome}</h3>
+            <p class="mb-2 text-white">Média de Avaliações: <span class="font-semibold">${media}</span></p>
+            <div class="mb-2 text-sm text-gray-200">
+              <strong>Comentários:</strong>
+              <ul class="list-disc ml-5">
+                ${recentes.length ? recentes.map(a => `<li>"${a.comentario || 'Sem comentário'}"</li>`).join('') : '<li>Sem comentários ainda.</li>'}
+              </ul>
+            </div>
+            <a href="avaliar.html?id=${t._id}" class="inline-block mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+              Avaliar
+            </a>
+          `;
+
+          container.appendChild(card);
+        }
+      } catch (error) {
+        document.getElementById('listaTerapeutas').innerHTML = '<p class="text-red-300">Erro ao carregar terapeutas.</p>';
+      }
+    }
+
+    carregarTerapeutas();
+  </script>
+</body>
+</html>

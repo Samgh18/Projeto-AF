@@ -1,6 +1,6 @@
 // backend/populaBanco.js
 
-const mongoose = require('mongoose');
+const mongooAse = require('mongoose');
 const Usuario = require('./models/Usuario');
 const Sessao = require('./models/Sessao');
 const Conteudo = require('./models/Conteudo');

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Avaliar Terapeuta</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 to-purple-800 min-h-screen text-white font-sans flex justify-center items-center p-4">
+
+  <div class="bg-white bg-opacity-10 backdrop-blur p-8 rounded-xl shadow-xl max-w-md w-full">
+    <h2 class="text-2xl font-bold text-center mb-6">Avaliar Terapeuta</h2>
+    <form id="avaliacaoForm" class="space-y-4">
+      <div>
+        <label for="estrelas" class="block mb-1">Nota (1 a 5)</label>
+        <select id="estrelas" class="w-full p-2 rounded text-black" required>
+          <option value="">Selecione</option>
+          <option value="1">⭐</option>
+          <option value="2">⭐⭐</option>
+          <option value="3">⭐⭐⭐</option>
+          <option value="4">⭐⭐⭐⭐</option>
+          <option value="5">⭐⭐⭐⭐⭐</option>
+        </select>
+      </div>
+      <div>
+        <label for="comentario" class="block mb-1">Comentário</label>
+        <textarea id="comentario" class="w-full p-2 rounded text-black" rows="4" placeholder="Deixe um comentário (opcional)"></textarea>
+      </div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Enviar Avaliação
+      </button>
+    </form>
+    <p id="mensagem" class="text-center mt-4 text-sm text-green-300"></p>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const terapeutaId = urlParams.get('id');
+    const pacienteId = localStorage.getItem('id');
+
+    document.getElementById('avaliacaoForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const estrelas = document.getElementById('estrelas').value;
+      const comentario = document.getElementById('comentario').value;
+
+      if (!terapeutaId || !pacienteId) {
+        alert('Erro ao identificar terapeuta ou paciente.');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/avaliacoes/criar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ terapeutaId, pacienteId, estrelas, comentario })
+        });
+
+        const msg = await response.text();
+        document.getElementById('mensagem').textContent = msg;
+
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1500);
+
+      } catch (error) {
+        document.getElementById('mensagem').textContent = 'Erro ao enviar avaliação.';
+      }
+    });
+  </script>
+</body>
+</html>

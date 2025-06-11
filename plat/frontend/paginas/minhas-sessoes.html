@@ -1,158 +1,69 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
   <title>Minhas Sessões</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #1e3a8a, #6b21a8);
-      background-size: 200% 200%;
-      animation: gradientShift 15s ease infinite;
-    }
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    .fade-in {
-      animation: fadeIn 0.8s ease-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .btn-hover {
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .btn-hover:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-    #particles-js {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-    }
-    .theme-light {
-      background: linear-gradient(135deg, #e0e7ff, #f3e8ff);
-    }
-    .theme-light .bg-white {
-      background-color: #ffffff;
-    }
-    .spinner {
-      border: 4px solid rgba(255, 255, 255, 0.3);
-      border-top: 4px solid #ffffff;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      animation: spin 1s linear infinite;
-      display: none;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
 </head>
-<body class="min-h-screen flex flex-col">
-  <div id="particles-js"></div>
-  <header class="bg-white bg-opacity-10 backdrop-blur-md py-4 px-6 flex justify-between items-center">
-    <div class="flex items-center space-x-2">
-      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-      </svg>
-      <h1 class="text-2xl font-bold text-white">Suporte Emocional</h1>
-    </div>
-    <button id="theme-toggle" class="text-white hover:text-gray-200">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-      </svg>
-    </button>
-  </header>
+<body class="p-4 bg-gradient-to-br from-indigo-900 to-purple-800 min-h-screen text-white font-sans">
+  <h2 class="text-3xl font-bold mb-6">Histórico de Sessões</h2>
 
-  <main class="flex-grow flex items-center justify-center px-4 py-8">
-    <div id="app" class="w-full max-w-2xl"></div>
-  </main>
+  <div id="lista-sessoes" class="space-y-4"></div>
 
-  <footer class="bg-white bg-opacity-10 backdrop-blur-md py-4 text-center text-white text-sm">
-    <p>© 2025 Plataforma de Suporte Emocional. Todos os direitos reservados.</p>
-    <div class="mt-2 space-x-4">
-      <a href="#" class="hover:underline">Sobre</a>
-      <a href="#" class="hover:underline">Contato</a>
-      <a href="#" class="hover:underline">Termos</a>
-    </div>
-  </footer>
+  <script>
+    const idUsuario = localStorage.getItem('id');
+    const lista = document.getElementById('lista-sessoes');
 
-  <script type="text/babel">
-    const App = () => {
-      const sessions = [
-        { id: 1, patient: 'João Silva', date: '10/06/2025', time: '14:00', status: 'Agendada' },
-        { id: 2, patient: 'Maria Oliveira', date: '11/06/2025', time: '10:30', status: 'Concluída' }
-      ];
+    async function carregarSessoes() {
+      try {
+        const res = await fetch(`http://localhost:3000/sessoes/paciente/${idUsuario}`);
+        if (!res.ok) throw new Error('Erro ao buscar sessões');
+        const sessoes = await res.json();
 
-      return (
-        <div className="bg-white bg-opacity-90 rounded-xl shadow-2xl p-8 fade-in w-full">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Minhas Sessões</h2>
-          <div className="space-y-6">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="p-3 text-gray-700">Paciente</th>
-                    <th className="p-3 text-gray-700">Data</th>
-                    <th className="p-3 text-gray-700">Horário</th>
-                    <th className="p-3 text-gray-700">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map(session => (
-                    <tr key={session.id} className="border-b">
-                      <td className="p-3 text-gray-600">{session.patient}</td>
-                      <td className="p-3 text-gray-600">{session.date}</td>
-                      <td className="p-3 text-gray-600">{session.time}</td>
-                      <td className="p-3 text-gray-600">{session.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        lista.innerHTML = '';
+
+        if (sessoes.length === 0) {
+          lista.innerHTML = `
+            <div class="bg-white bg-opacity-10 p-6 rounded-lg shadow text-center">
+              <p class="text-lg">Nenhum histórico de sessão encontrado.</p>
+              <a href="#" onclick="carregarPagina({ id: 'agendar-sessao', nome: 'Agendar Sessão' })" 
+                 class="mt-4 inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition">
+                Agendar Sessão
+              </a>
             </div>
-          </div>
-        </div>
-      );
-    };
+          `;
+        } else {
+          sessoes.forEach(sessao => {
+            const item = document.createElement('div');
+            item.className = 'bg-white bg-opacity-10 p-4 rounded shadow';
 
-    ReactDOM.render(<App />, document.getElementById('app'));
+            const data = new Date(sessao.data).toLocaleDateString('pt-BR');
 
-    particlesJS('particles-js', {
-      particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: '#ffffff' },
-        shape: { type: 'circle' },
-        opacity: { value: 0.5, random: true },
-        size: { value: 3, random: true },
-        line_linked: { enable: false },
-        move: { enable: true, speed: 2, direction: 'none', random: true }
-      },
-      interactivity: {
-        detect_on: 'canvas',
-        events: { onhover: { enable: true, mode: 'repulse' } },
-        modes: { repulse: { distance: 100, duration: 0.4 } }
+            item.innerHTML = `
+              <p><strong>Data:</strong> ${data}</p>
+              <p><strong>Terapeuta:</strong> ${sessao.nomeTerapeuta}</p>
+              ${sessao.diagnostico ? `<p><strong>Diagnóstico:</strong> ${sessao.diagnostico}</p>` : ''}
+              ${sessao.terapia ? `<p><strong>Terapia Aplicada:</strong> ${sessao.terapia}</p>` : ''}
+            `;
+
+            lista.appendChild(item);
+          });
+        }
+      } catch (e) {
+        lista.innerHTML = `<p class="text-red-400">Erro ao carregar sessões: ${e.message}</p>`;
       }
-    });
+    }
 
-    document.getElementById('theme-toggle').addEventListener('click', () => {
-      document.body.classList.toggle('theme-light');
-    });
+    // Permite navegação via menu lateral (usado no dashboard)
+    function carregarPagina(pagina) {
+      localStorage.setItem('paginaSelecionada', pagina.id);
+      document.getElementById('titulo').innerText = pagina.nome;
+      fetch(`paginas/${pagina.id}.html`)
+        .then(res => res.text())
+        .then(html => document.getElementById('content').innerHTML = html);
+    }
+
+    carregarSessoes();
   </script>
+</body>
 </html>
